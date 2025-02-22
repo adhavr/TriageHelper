@@ -3,12 +3,12 @@ import os
 
 from groq import Groq
 
-API_KEY = st.secrets["API_KEY"]
+st.write("Debugging Secrets:", st.secrets)
 
-if API_KEY:
-    print("SUCCESS!!!!!!!!!!\n\n\n\n\n\n\n")
-else:
-    print("FAILLLL\n\n\n\n\n\n\n")
+# Access the API_KEY
+API_KEY = st.secrets.get("API_KEY", None)
+
+print(API_KEY)
 
 client = Groq(
     api_key=API_KEY,
