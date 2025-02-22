@@ -114,10 +114,6 @@ def main():
                     """,
             unsafe_allow_html=True,
         )
-        # Display entered details for confirmation
-        #st.subheader("Patient Details")
-        #st.json(patient_data)
-
 
 if __name__ == "__main__":
     main()
