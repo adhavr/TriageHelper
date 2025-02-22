@@ -21,7 +21,7 @@ jobs:
         run: pip install -r requirements.txt
 
       - name: Set API Key as Environment Variable
-        run: echo "API_KEY=${{ secrets.API_KEY }}" >> $GITHUB_ENV
+        run: echo "API_KEY=${{ vars.API_KEY }}" >> $GITHUB_ENV
 
       - name: Run Python Script
         run: python app.py
