@@ -3,6 +3,7 @@ import os
 
 from groq import Groq
 
+print(st.secrets)
 
 API_KEY = st.secrets[API_KEY]
 
