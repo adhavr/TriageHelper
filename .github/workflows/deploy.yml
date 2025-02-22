@@ -27,6 +27,9 @@ jobs:
           echo "[general]" > ~/.streamlit/secrets.toml
           echo "API_KEY = \"${{ vars.API_KEY }}\"" >> ~/.streamlit/secrets.toml
 
+      - name: Debug Secrets File
+        run: cat ~/.streamlit/secrets.toml
+
       # - name: load key
       #   with:
       #     API_KEY: ${{ vars.API_KEY }}
