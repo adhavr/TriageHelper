@@ -3,7 +3,7 @@ import os
 
 from groq import Groq
 
-API_KEY = os.getenv("API_KEY")
+API_KEY = st.secrets["API_KEY"]
 
 if API_KEY:
     print("SUCCESS!!!!!!!!!!\n\n\n\n\n\n\n")
