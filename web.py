@@ -3,10 +3,8 @@ import os
 
 from groq import Groq
 
-st.write("Debugging Secrets:", st.secrets)
 
-# Access the API_KEY
-API_KEY = st.secrets.get("API_KEY", None)
+API_KEY = os.getenv('API_KEY')
 
 print(API_KEY)
 
