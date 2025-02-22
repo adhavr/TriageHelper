@@ -23,20 +23,10 @@ def get_triage_color(triage_level):
     else:
         return "black"
 
-def get_triage_description(triage_level):
-    descriptions = {
-        "1": "Life-threatening: Requires immediate intervention.",
-        "2": "Emergency: Requires urgent attention.",
-        "3": "Urgent: Requires prompt care.",
-        "4": "Semi-urgent: Can wait for a short time.",
-        "5": "Non-urgent: Can wait for an extended time.",
-    }
-    return descriptions.get(triage_level, "Unknown triage level.")
-
 def main():
-    st.set_page_config(page_title="Triage System", layout="centered")
+    st.set_page_config(page_title="Triage Assist", layout="centered")
 
-    st.title("🏥 Patient Triage System")
+    st.title("🏥 Triage Assist")
     st.write("Enter patient details below to determine their triage status.")
 
     # Input Fields
