@@ -27,5 +27,8 @@ jobs:
           echo "[general]" > ~/.streamlit/secrets.toml
           echo "API_KEY = \"${{ secrets.API_KEY }}\"" >> ~/.streamlit/secrets.toml
 
+      - name: Debug Secrets File
+        run: cat ~/.streamlit/secrets.toml
+      
       - name: Run Streamlit App
         run: streamlit run app.py --server.headless true
