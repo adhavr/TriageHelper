@@ -3,25 +3,7 @@ import os
 
 from groq import Groq
 
-# secrets_path = os.path.expanduser("~/.streamlit/secrets.toml")
-
-# if os.path.exists(secrets_path):
-#     st.write("✅ Secrets file found:", secrets_path)
-# else:
-#     st.error("❌ Secrets file NOT found!")
-
-# API_KEY = st.secrets.get("API_KEY", None)
-
-# print(st.secrets)
-
-print(os.environ)
-
 API_KEY = st.secrets["API_KEY"]
-
-if API_KEY:
-    print("✅ API key loaded successfully.")
-else:
-    print("❌ API key not found!")
 
 client = Groq(
     api_key=API_KEY,
@@ -41,6 +23,16 @@ def get_triage_color(triage_level):
     else:
         return "black"
 
+def get_triage_description(triage_level):
+    descriptions = {
+        "1": "Life-threatening: Requires immediate intervention.",
+        "2": "Emergency: Requires urgent attention.",
+        "3": "Urgent: Requires prompt care.",
+        "4": "Semi-urgent: Can wait for a short time.",
+        "5": "Non-urgent: Can wait for an extended time.",
+    }
+    return descriptions.get(triage_level, "Unknown triage level.")
+
 def main():
     st.set_page_config(page_title="Triage System", layout="centered")
 
@@ -49,20 +41,27 @@ def main():
 
     # Input Fields
     name = st.text_input("Patient Name")
-    age = st.number_input("Age", min_value=0, max_value=120, step=1)
+    age = st.number_input("Age", min_value=0, max_value=120, step=1, value=None)
     description = st.text_area("Patient Description",
                                placeholder="Describe symptoms, conditions, or any relevant details.")
-    pain_level = st.slider("Pain Level (0-10)", 0, 10, 5)
-    bp_systolic = st.number_input("Systolic BP (mmHg)", min_value=50, max_value=250, step=1)
-    bp_diastolic = st.number_input("Diastolic BP (mmHg)", min_value=30, max_value=150, step=1)
-    heart_rate = st.number_input("Heart Rate (bpm)", min_value=30, max_value=220, step=1)
-    oxygen_saturation = st.number_input("Oxygen Saturation (%)", min_value=50, max_value=100, step=1)
+    pain_level = st.slider("Pain Level (0-10)", 0, 10, 0)
+    bp_systolic = st.number_input("Systolic BP (mmHg)", min_value=50, max_value=250, step=1, value=None)
+    bp_diastolic = st.number_input("Diastolic BP (mmHg)", min_value=30, max_value=150, step=1, value=None)
+    heart_rate = st.number_input("Heart Rate (bpm)", min_value=30, max_value=220, step=1, value=None)
+    oxygen_saturation = st.number_input("Oxygen Saturation (%)", min_value=50, max_value=100, step=1, value=None)
 
     if st.button("Submit", use_container_width=True):
+        age = "Unknown" if age is None else age
+        pain_level = "Unknown" if pain_level is None else pain_level
+        bp_systolic = "Unknown" if bp_systolic is None else bp_systolic
+        bp_diastolic = "Unknown" if bp_diastolic is None else bp_diastolic
+        heart_rate = "Unknown" if heart_rate is None else heart_rate
+        oxygen_saturation = "Unknown" if oxygen_saturation is None else oxygen_saturation
+
         patient_data = {
-            "name": name,
+            "name": name if name else "Unknown",
             "age": age,
-            "description": description,
+            "description": description if description else "Unknown",
             "pain_level": pain_level,
             "bp_systolic": bp_systolic,
             "bp_diastolic": bp_diastolic,
@@ -76,7 +75,7 @@ def main():
                  + ", BP: " + str(patient_data["bp_systolic"]) + "/" + str(patient_data["bp_diastolic"])
                  + ", Heart Rate: " + str(patient_data["heart_rate"])
                  + ", Oxygen Saturation: " + str(patient_data["oxygen_saturation"])
-                 + ". Give a number from 1 through 5, where 1 is a life threatening injury that requires intervention, and 5 is not life-threatening in any way. Be sure to give only a number and nothing else. No punctuation or extra words. Only a number that is 1, 2, 3, 4, or 5")
+                 + ". Give a number from 1 through 5, where 1 is a life threatening injury that requires intervention, and 5 is not life-threatening in any way. Then, give a ONE sentence (LESS THAN 10 WORDS) description of why. Seperate the number from the description with a semi colon (for example, \"1;Patient is entering cardiac arrest and needs AED.\" No extra punctuation or extra words. Only a number that is 1, 2, 3, 4, or 5 and a description that is ONE sentence and 10 words or less. DO NOT use a semi colon anywhere else in the response. Do not give explicit medical advice.")
 
         chat_completion = client.chat.completions.create(
             messages=[
@@ -90,10 +89,11 @@ def main():
 
 
         print(query)
-        triage_level = chat_completion.choices[0].message.content
+        response = chat_completion.choices[0].message.content
+        triage_level = response.split(";")[0]
         triage_color = get_triage_color(triage_level)
+        triage_description = response.split(";")[1]
 
-        # Display the triage status in a colored box
         st.markdown(
             f"""
                     <div style="
@@ -106,6 +106,20 @@ def main():
                         font-weight: bold;
                     ">
                         Triage Level: {triage_level}
+                    </div>
+                    """,
+            unsafe_allow_html=True,
+        )
+
+        st.markdown(
+            f"""
+                    <div style="
+                        text-align: center;
+                        font-size: 16px;
+                        color: #666666;
+                        margin-top: 10px;
+                    ">
+                        {triage_description}
                     </div>
                     """,
             unsafe_allow_html=True,
