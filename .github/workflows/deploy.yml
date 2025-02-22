@@ -10,38 +10,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v3
+      - name: Hello world action
+        env: # Or as an environment variable
+          super_secret: ${{ secrets.SuperSecret }}
 
-      - name: Set Up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.10'  # Change to match your Streamlit version
-
-      - name: Install Dependencies
-        run: pip install -r requirements.txt
-
-      - name: Create Streamlit Secrets File
-        run: |
-          mkdir -p ~/.streamlit
-          echo "[general]" > ~/.streamlit/secrets.toml
-          echo "API_KEY = \"${{ vars.API_KEY }}\"" >> ~/.streamlit/secrets.toml
-
-      - name: Debug Secrets File
-        run: cat ~/.streamlit/secrets.toml
-
-      # - name: load key
-      #   with:
-      #     API_KEY: ${{ vars.API_KEY }}
-      #   env:
-      #     API_KEY: ${{ vars.API_KEY }}
-      - name: Check File Permissions
-        run: ls -l ~/.streamlit/secrets.toml
-
-      - name: Set Streamlit Secrets Path
-        run: |
-          export STREAMLIT_CONFIG_PATH="$HOME/.streamlit/secrets.toml"
-          streamlit run app.py --server.headless true
       
       - name: Run Streamlit App
         run: streamlit run app.py --server.headless true
