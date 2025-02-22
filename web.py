@@ -16,7 +16,7 @@ from groq import Groq
 
 print(os.environ)
 
-API_KEY = os.getenv("API_KEY")
+API_KEY = st.secrets["API_KEY"]
 
 if API_KEY:
     print("✅ API key loaded successfully.")
