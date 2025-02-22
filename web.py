@@ -12,6 +12,8 @@ else:
 
 API_KEY = st.secrets.get("API_KEY", None)
 
+print(st.secrets)
+
 if API_KEY:
     st.success("✅ API Key Loaded Successfully!")
 else:
