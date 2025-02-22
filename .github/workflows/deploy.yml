@@ -27,11 +27,13 @@ jobs:
       #     echo "[general]" > ~/.streamlit/secrets.toml
       #     echo "API_KEY = \"${{ secrets.API_KEY }}\"" >> ~/.streamlit/secrets.toml
 
-      - name: load key
-        with:
-          API_KEY: ${{ secrets.API_KEY }}
-        env:
-          API_KEY: ${{ secrets.API_KEY }}
+      # - name: load key
+      #   with:
+      #     API_KEY: ${{ secrets.API_KEY }}
+      #   env:
+      #     API_KEY: ${{ secrets.API_KEY }}
       
       - name: Run Streamlit App
+        env:
+          API_KEY: ${{ secrets.API_KEY }}
         run: streamlit run app.py --server.headless true
