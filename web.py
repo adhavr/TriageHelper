@@ -3,21 +3,23 @@ import os
 
 from groq import Groq
 
-secrets_path = os.path.expanduser("~/.streamlit/secrets.toml")
+# secrets_path = os.path.expanduser("~/.streamlit/secrets.toml")
 
-if os.path.exists(secrets_path):
-    st.write("✅ Secrets file found:", secrets_path)
-else:
-    st.error("❌ Secrets file NOT found!")
+# if os.path.exists(secrets_path):
+#     st.write("✅ Secrets file found:", secrets_path)
+# else:
+#     st.error("❌ Secrets file NOT found!")
 
-API_KEY = st.secrets.get("API_KEY", None)
+# API_KEY = st.secrets.get("API_KEY", None)
 
-print(st.secrets)
+# print(st.secrets)
+
+API_KEY = os.getenv("API_KEY")
 
 if API_KEY:
-    st.success("✅ API Key Loaded Successfully!")
+    print("✅ API key loaded successfully.")
 else:
-    st.error("❌ API Key Not Found!")
+    print("❌ API key not found!")
 
 client = Groq(
     api_key=API_KEY,
