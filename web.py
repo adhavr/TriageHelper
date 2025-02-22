@@ -14,6 +14,8 @@ from groq import Groq
 
 # print(st.secrets)
 
+print(os.environ)
+
 API_KEY = os.getenv("API_KEY")
 
 if API_KEY:
