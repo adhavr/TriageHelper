@@ -1,27 +1,31 @@
-name: Deploy App
+name: Deploy Streamlit App
 
 on:
   push:
     branches:
-      - main  # Adjust branch if needed
+      - main  # Change if your main branch has a different name
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v3
 
-      - name: Set up Python
+      - name: Set Up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.10'
+          python-version: '3.10'  # Change to match your Streamlit version
 
       - name: Install Dependencies
         run: pip install -r requirements.txt
 
-      - name: Set API Key as Environment Variable
-        run: echo "API_KEY=${{ vars.API_KEY }}" >> $GITHUB_ENV
+      - name: Create Streamlit Secrets File
+        run: |
+          mkdir -p ~/.streamlit
+          echo "[general]" > ~/.streamlit/secrets.toml
+          echo "API_KEY = \"${{ secrets.API_KEY }}\"" >> ~/.streamlit/secrets.toml
 
-      - name: Run Python Script
-        run: python app.py
+      - name: Run Streamlit App
+        run: streamlit run app.py --server.headless true
