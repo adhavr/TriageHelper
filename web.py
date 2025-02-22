@@ -4,7 +4,7 @@ import os
 from groq import Groq
 
 client = Groq(
-    api_key="",
+    api_key="{{ secrets.API_KEY }}",
 )
 
 def get_triage_color(triage_level):
