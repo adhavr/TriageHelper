@@ -4,7 +4,7 @@ import os
 from groq import Groq
 
 
-API_KEY = os.getenv('API_KEY')
+API_KEY = st.secrets["API_KEY"]
 
 print(API_KEY)
 
