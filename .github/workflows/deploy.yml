@@ -21,17 +21,17 @@ jobs:
       - name: Install Dependencies
         run: pip install -r requirements.txt
 
-      # - name: Create Streamlit Secrets File
-      #   run: |
-      #     mkdir -p ~/.streamlit
-      #     echo "[general]" > ~/.streamlit/secrets.toml
-      #     echo "API_KEY = \"${{ secrets.API_KEY }}\"" >> ~/.streamlit/secrets.toml
+      - name: Create Streamlit Secrets File
+        run: |
+          mkdir -p ~/.streamlit
+          echo "[general]" > ~/.streamlit/secrets.toml
+          echo "API_KEY = \"${{ vars.API_KEY }}\"" >> ~/.streamlit/secrets.toml
 
-      - name: load key
-        with:
-          API_KEY: ${{ vars.API_KEY }}
-        env:
-          API_KEY: ${{ vars.API_KEY }}
+      # - name: load key
+      #   with:
+      #     API_KEY: ${{ vars.API_KEY }}
+      #   env:
+      #     API_KEY: ${{ vars.API_KEY }}
       
       - name: Run Streamlit App
         run: streamlit run app.py --server.headless true
