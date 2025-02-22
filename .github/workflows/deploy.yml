@@ -37,6 +37,11 @@ jobs:
       #     API_KEY: ${{ vars.API_KEY }}
       - name: Check File Permissions
         run: ls -l ~/.streamlit/secrets.toml
+
+      - name: Set Streamlit Secrets Path
+        run: |
+          export STREAMLIT_CONFIG_PATH="$HOME/.streamlit/secrets.toml"
+          streamlit run app.py --server.headless true
       
       - name: Run Streamlit App
         run: streamlit run app.py --server.headless true
