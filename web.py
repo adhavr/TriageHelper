@@ -102,27 +102,25 @@ def main():
         )
 
         st.markdown(
-            f"""
-                    <div style="
-                        text-align: center;
-                        font-size: 16px;
-                        color: #666666;
-                        margin-top: 10px;
-                    ">
-                        {triage_description}
-                    </div>
-                    """,
-            unsafe_allow_html=True,
+            """
+            <style>
+            .css-1jc7ptx, .e1ewe7hr3, .viewerBadge_container__1QSob,
+            .styles_viewerBadge__1yB5_, .viewerBadge_link__1S137,
+            .viewerBadge_text__1JaDK {
+                display: none;
+            }
+            </style>
+            """,
+            unsafe_allow_html=True
         )
 
-        st.markdown(
-            """
-            #GithubIcon {
-              visibility: hidden;
-            }
-            """,
-            unsafe_allow_html=True,
-        )
+        hide_streamlit_style = """
+                    <style>
+                    #MainMenu {visibility: hidden;}
+                    footer {visibility: hidden;}
+                    </style>
+                    """
+        st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 if __name__ == "__main__":
     main()
