@@ -77,8 +77,6 @@ def main():
             model="llama-3.3-70b-versatile",
         )
 
-
-        print(query)
         response = chat_completion.choices[0].message.content
         triage_level = response.split(";")[0]
         triage_color = get_triage_color(triage_level)
