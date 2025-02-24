@@ -112,8 +112,6 @@ def main():
             unsafe_allow_html=True
         )
 
-        import streamlit as st
-
         hide_streamlit_style = """
             <style>
             footer {visibility: hidden;}
