@@ -112,12 +112,21 @@ def main():
             unsafe_allow_html=True
         )
 
+        import streamlit as st
+
         hide_streamlit_style = """
-                    <style>
-                    #MainMenu {visibility: hidden;}
-                    footer {visibility: hidden;}
-                    </style>
-                    """
+            <style>
+            footer {visibility: hidden;}
+            footer:after {
+                content: '';
+                visibility: visible;
+                display: block;
+                position: relative;
+                padding: 0px;
+                top: 0px;
+            }
+            </style>
+        """
         st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 if __name__ == "__main__":
