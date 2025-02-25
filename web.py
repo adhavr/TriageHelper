@@ -68,10 +68,25 @@ def main():
     bp_diastolic = st.number_input("Diastolic BP (mmHg)", min_value=30, max_value=150, step=1, value=None)
     heart_rate = st.number_input("Heart Rate (bpm)", min_value=30, max_value=220, step=1, value=None)
     oxygen_saturation = st.number_input("Oxygen Saturation (%)", min_value=50, max_value=100, step=1, value=None)
-    st.write("Upload or take a picture of the patient or injury:")
-    image_file = st.file_uploader("Upload an image", type=["jpg", "jpeg", "png"])
-    camera_image = st.camera_input("Or take a picture")
-    image = image_file if image_file else camera_image
+    #st.write("Upload or take a picture of the patient or injury:")
+    option = st.radio(
+        "Choose an option:",
+        ("Upload a photo", "Take a photo"),
+        horizontal=True,  # Display options horizontally
+    )
+
+    image = None
+
+    if option == "Upload a photo":
+        st.write("Upload a photo:")
+        image_file = st.file_uploader("Upload an image", type=["jpg", "jpeg", "png"], label_visibility="collapsed")
+        if image_file is not None:
+            image = Image.open(image_file)
+    else:
+        st.write("Take a photo:")
+        camera_image = st.camera_input("Take a photo", label_visibility="collapsed")
+        if camera_image is not None:
+            image = Image.open(camera_image)
 
     if st.button("Submit", use_container_width=True):
         age = "Unknown" if age is None else age
@@ -83,7 +98,6 @@ def main():
 
         image_description = "No image provided."
         if image is not None:
-            image = Image.open(image)
             image_description = analyze_image(image)
 
         patient_data = {
