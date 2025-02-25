@@ -59,7 +59,6 @@ def main():
     st.write("Enter patient details below to determine their triage status.")
 
     # Input Fields
-    name = st.text_input("Patient Name")
     age = st.number_input("Age", min_value=0, max_value=120, step=1, value=None)
     description = st.text_area("Patient Description",
                                placeholder="Describe symptoms, conditions, or any relevant details.")
@@ -101,7 +100,6 @@ def main():
             image_description = analyze_image(image)
 
         patient_data = {
-            "name": name if name else "Unknown",
             "age": age,
             "description": description if description else "Unknown",
             "pain_level": pain_level,
@@ -113,7 +111,6 @@ def main():
         }
 
         query = ("Give the triage level based on the following info. Description: " + str(patient_data["description"])
-                 + ", Age: " + str(patient_data["age"])
                  + ", Description of the image of the patient: " + str(patient_data["image_description"])
                  + ", Pain Level: " + str(patient_data["pain_level"])
                  + ", BP: " + str(patient_data["bp_systolic"]) + "/" + str(patient_data["bp_diastolic"])
