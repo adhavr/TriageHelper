@@ -4,9 +4,8 @@ from groq import Groq
 import base64
 import io
 
-client = Groq(
-    api_key=st.secrets["API_KEY"],
-)
+def get_groq_client():
+    return Groq(api_key=st.secrets["API_KEY"])
 
 def encode_image(image):
     """
@@ -18,6 +17,7 @@ def encode_image(image):
 
 def analyze_image(image):
     base64_image = encode_image(image)
+    client = get_groq_client()
     chat_completion = client.chat.completions.create(
         messages=[
             {
@@ -106,6 +106,8 @@ def main():
                  + ", Heart Rate: " + str(patient_data["heart_rate"])
                  + ", Oxygen Saturation: " + str(patient_data["oxygen_saturation"])
                  + ". Give a number from 1 through 5, where 1 is a life threatening injury that requires intervention, and 5 is not life-threatening in any way. Then, give a ONE sentence (LESS THAN 10 WORDS) description of why. Seperate the number from the description with a semi colon (for example, \"1;Patient is entering cardiac arrest and needs AED.\" No extra punctuation or extra words. Only a number that is 1, 2, 3, 4, or 5 and a description that is ONE sentence and 10 words or less. DO NOT use a semi colon anywhere else in the response. Do not give explicit medical advice.")
+
+        client = get_groq_client()
 
         chat_completion = client.chat.completions.create(
             messages=[
