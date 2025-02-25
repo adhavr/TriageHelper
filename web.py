@@ -112,20 +112,18 @@ def main():
             unsafe_allow_html=True
         )
 
-        hide_streamlit_style = """
+       st.markdown(
+            """
             <style>
-            footer {visibility: hidden;}
-            footer:after {
-                content: '';
-                visibility: visible;
-                display: block;
-                position: relative;
-                padding: 0px;
-                top: 0px;
+            .css-1jc7ptx, .e1ewe7hr3, .viewerBadge_container__1QSob,
+            .styles_viewerBadge__1yB5_, .viewerBadge_link__1S137,
+            .viewerBadge_text__1JaDK {
+                display: none;
             }
             </style>
-        """
-        st.markdown(hide_streamlit_style, unsafe_allow_html=True)
+            """,
+            unsafe_allow_html=True
+        )
 
 if __name__ == "__main__":
     main()
