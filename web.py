@@ -111,8 +111,7 @@ def main():
             """,
             unsafe_allow_html=True
         )
-
-       st.markdown(
+        st.markdown(
             """
             <style>
             .css-1jc7ptx, .e1ewe7hr3, .viewerBadge_container__1QSob,
