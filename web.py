@@ -3,18 +3,30 @@ from PIL import Image
 from groq import Groq
 import base64
 import io
+from streamlit_cookies_controller import CookieController
+import time
 
+# Initialize CookieController
+cookie_name = 'triage_assist'
+controller = CookieController(key='cookies')
+
+# Mock user database (replace with a real database in production)
+USERS = {
+    "doctor1": {"password": "password1"},
+    "doctor2": {"password": "password2"},
+}
+
+# Initialize Groq client
 def get_groq_client():
     return Groq(api_key=st.secrets["API_KEY"])
 
+# Function to encode the image
 def encode_image(image):
-    """
-    Converts a PIL.Image object to a base64-encoded string.
-    """
-    buffered = io.BytesIO()  # Create a bytes buffer
-    image.save(buffered, format="JPEG")  # Save the image to the buffer in JPEG format
-    return base64.b64encode(buffered.getvalue()).decode('utf-8')  # Encode to base64
+    buffered = io.BytesIO()
+    image.save(buffered, format="JPEG")
+    return base64.b64encode(buffered.getvalue()).decode('utf-8')
 
+# Function to analyze the image
 def analyze_image(image):
     base64_image = encode_image(image)
     client = get_groq_client()
@@ -35,9 +47,9 @@ def analyze_image(image):
         ],
         model="llama-3.2-11b-vision-preview",
     )
-
     return chat_completion.choices[0].message.content
 
+# Function to get triage color
 def get_triage_color(triage_level):
     if triage_level == "1":
         return "#E3242B"
@@ -52,20 +64,90 @@ def get_triage_color(triage_level):
     else:
         return "black"
 
-def main():
+# Check login state on page load
+if 'login_ok' not in st.session_state:
+    # Check the contents of the cookie
+    cookie_username = controller.get(f'{cookie_name}_username')
+    cookie_password = controller.get(f'{cookie_name}_password')
+
+    if cookie_username and cookie_password:
+        st.session_state.login_ok = True
+        st.session_state.username = cookie_username
+        st.session_state.password = cookie_password
+        st.success(f'Welcome back {st.session_state.username}!')
+    else:
+        st.session_state.login_ok = False
+
+# Login Page
+def login_page():
+    st.title("🔐 Login to TriageAssist")
+    username = st.text_input("Username")
+    password = st.text_input("Password", type="password")
+    if st.button("Login"):
+        st.session_state.username = username
+        st.session_state.password = password
+        authenticate()
+
+# Authenticate user
+def authenticate():
+    username = st.session_state.username
+    password = st.session_state.password
+
+    user_info = USERS.get(username, {})
+    if user_info and user_info.get("password") == password:
+        # Save to cookie
+        controller.set(f'{cookie_name}_username', username, max_age=80*60*60)
+        controller.set(f'{cookie_name}_password', password, max_age=80*60*60)
+        st.session_state.login_ok = True
+        st.rerun()
+    else:
+        st.error("Wrong username/password.")
+
+# Logout Function
+def logout():
+    # Remove cookies to log out
+    controller.remove(f'{cookie_name}_username')
+    controller.remove(f'{cookie_name}_password')
+    st.session_state.login_ok = False
+    st.session_state.username = None
+    st.session_state.password = None
+    st.rerun()
+
+# Main App
+def main_app():
     st.set_page_config(page_title="Triage Assist", layout="centered")
 
+    # Initialize session state for triage requests
+    if "triage_requests" not in st.session_state:
+        st.session_state.triage_requests = []
+
+    # Sidebar for previous triage requests
+    st.sidebar.title("📋 Previous Triage Requests")
+    if st.session_state.triage_requests:
+        # Sort triage requests by priority (1 at the top)
+        sorted_requests = sorted(st.session_state.triage_requests, key=lambda x: int(x["triage_level"]))
+        for i, request in enumerate(sorted_requests):
+            with st.sidebar.expander(f"Triage {i + 1}: Level {request['triage_level']}"):
+                st.write(f"**Description:** {request['description']}")
+                st.write(f"**Triage Level:** {request['triage_level']}")
+                st.write(f"**Reason:** {request['triage_description']}")
+                if st.button(f"Resolve Triage {i + 1}", key=f"resolve_{i}"):
+                    st.session_state.triage_requests.pop(i)
+                    st.rerun()
+    else:
+        st.sidebar.write("No triage requests yet.")
+
+    # Logout button
+    if st.sidebar.button("Logout"):
+        logout()
+
+    # Main content
     st.title("🏥 TriageAssist")
     st.write("Enter patient details below to determine their triage status.")
 
     # Input Fields
+    name = st.text_input("Name of patient", placeholder="Optional, will not affect results")
     age = st.number_input("Age", min_value=0, max_value=120, step=1, value=None)
-
-    sex_options = ["Male", "Female", "No Selection"]
-    sex = st.radio("Sex", sex_options, index=2)  # Default to "Clear"
-    if sex == "No Selection":
-        sex = None
-
     description = st.text_area("Patient Description",
                                placeholder="Describe symptoms, conditions, or any relevant details.")
     pain_level = st.slider("Pain Level (0-10)", 0, 10, 0)
@@ -74,21 +156,17 @@ def main():
     heart_rate = st.number_input("Heart Rate (bpm)", min_value=30, max_value=220, step=1, value=None)
     oxygen_saturation = st.number_input("Oxygen Saturation (%)", min_value=50, max_value=100, step=1, value=None)
 
-    # Consciousness Field
-    consciousness_options = ["Alert", "Verbal Response", "Pain Response", "Unresponsive"]
-    consciousness = st.radio("Consciousness", consciousness_options, index=0)
+    sex = st.radio("Sex", ["Male", "Female", "No Selection"], index=2)
 
-    # Mode of Transport Field
-    transport_options = ["Walk", "Public Ambulance", "Private Vehicle", "Private Ambulance", "No Selection"]
-    transport = st.radio("Mode of Transport", transport_options, index=4)
-    if transport == "No Selection":
-        transport = None
+    consciousness = st.radio("Consciousness", ["Alert", "Verbal Response", "Pain Response", "Unresponsive"], index=0)
+
+    transport = st.radio("Mode of Transport", ["Walk", "Public Ambulance", "Private Vehicle", "Private Ambulance", "No Selection"], index=4)
 
     # Image Upload or Capture
     option = st.radio(
         "Choose an option:",
         ("Upload a photo", "Take a photo"),
-        horizontal=True,  # Display options horizontally
+        horizontal=True,
     )
 
     image = None
@@ -162,6 +240,13 @@ def main():
         triage_color = get_triage_color(triage_level)
         triage_description = response.split(";")[1]
 
+        # Add triage request to session state
+        st.session_state.triage_requests.append({
+            "triage_level": triage_level,
+            "description": description,
+            "triage_description": triage_description,
+        })
+
         st.markdown(
             f"""
                     <div style="
@@ -193,10 +278,24 @@ def main():
             unsafe_allow_html=True,
         )
 
-        # # Display entered details for confirmation
-        # st.subheader("Patient Details")
-        # st.json(patient_data)
+        # Display entered details for confirmation
+        st.subheader("Patient Details")
+        st.json(patient_data)
 
+# App Entry Point
+def main():
+    time.sleep(1)
+    if not st.session_state["login_ok"]:
+        cookie_username = controller.get(f'{cookie_name}_username')
+        cookie_password = controller.get(f'{cookie_name}_password')
+
+        if cookie_username and cookie_password:
+            st.session_state.login_ok = True
+            main_app()
+        else:
+            login_page()
+    else:
+        main_app()
 
 if __name__ == "__main__":
     main()
