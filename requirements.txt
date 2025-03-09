@@ -1,2 +1,6 @@
 groq
+sqlalchemy
+psycopg2-binary
+passlib
+streamlit-cookies-controller
 pillow
