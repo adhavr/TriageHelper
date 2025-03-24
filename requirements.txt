@@ -5,3 +5,6 @@ passlib
 streamlit-cookies-controller
 pillow
 joblib
+sklearn
+pandas
+numpy
