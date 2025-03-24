@@ -272,8 +272,8 @@ def main_app():
         st.sidebar.write("No triage requests yet.")
  
      # Logout button
-     if st.sidebar.button("Logout"):
-         logout()
+    if st.sidebar.button("Logout"):
+        logout()
 
     # Logout button
     if st.sidebar.button("Logout"):
