@@ -274,10 +274,6 @@ def main_app():
      # Logout button
     if st.sidebar.button("Logout"):
         logout()
-
-    # Logout button
-    if st.sidebar.button("Logout"):
-        logout()
         
     st.title("🏥 TriageAssist")
     st.write("Enter patient details below to determine their triage status.")
