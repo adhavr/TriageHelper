@@ -252,8 +252,6 @@ def logout():
 
 # Main App
 def main_app():
-    st.set_page_config(page_title="Triage Assist", layout="centered")
-
     # Sidebar for previous triage requests
     st.sidebar.title("📋 Previous Triage Requests")
     triages = conn.query(f"SELECT * FROM triages WHERE user_id = {st.session_state.user_id}", ttl=0)
