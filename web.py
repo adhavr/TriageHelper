@@ -7,6 +7,7 @@ from streamlit_cookies_controller import CookieController
 import time
 import joblib
 import pandas as pd
+import math
 
 st.set_page_config(page_title="Triage Assist", layout="centered")
 
@@ -107,7 +108,7 @@ def map_pain(pain_level):
     """
     Map pain level to 1 or 2 based on the slider value.
     """
-    return 2 if pain_level >= 3 else 1
+    return 2 if pain_level >= 4 else 1
 
 def map_injury(description):
     """
@@ -134,14 +135,15 @@ def predict_with_ml_model(input_data):
     prediction = voting_model.predict(input_data_scaled)
     return prediction[0] + 1
 
-def calculate_recommended_triage(groq_triage_level, ml_triage_level):
+def calculate_recommended_triage(groq_triage_level, ml_triage_level, model_weight):
     """
     Calculate the recommended triage level as a weighted average.
     """
-    groq_weight = 0.75
-    ml_weight = 0.25
+    if model_weight < 0: model_weight = 0
+    groq_weight = 1 - model_weight
+    ml_weight = model_weight
     recommended_triage = groq_weight * float(groq_triage_level) + ml_weight * float(ml_triage_level)
-    return round(recommended_triage)  # Round to the nearest integer
+    return math.floor(recommended_triage)  # Round to the nearest integer
 
 # Initialize CookieController
 cookie_name = 'triage_assist'
@@ -218,12 +220,18 @@ if 'login_ok' not in st.session_state:
 # Login Page
 def login_page():
     st.title("🔐 Login to TriageAssist")
-    username = st.text_input("Username")
-    password = st.text_input("Password", type="password")
+    username = st.text_input("Username", key="login_username")
+    password = st.text_input("Password", type="password", key="login_password")
+
     if st.button("Login"):
         st.session_state.username = username
         st.session_state.password = password
         authenticate()
+    if st.button("Use as Guest", type="secondary"):
+        st.session_state.login_ok = True
+        st.session_state.username = "guest"
+        st.session_state.is_guest = True
+        st.rerun()
 
 # Authenticate user
 def authenticate():
@@ -243,11 +251,16 @@ def authenticate():
 # Logout Function
 def logout():
     # Remove cookies to log out
-    controller.remove(f'{cookie_name}_username')
-    controller.remove(f'{cookie_name}_password')
+    if not st.session_state.get("is_guest", False):
+        controller.remove(f'{cookie_name}_username')
+        controller.remove(f'{cookie_name}_password')
+
+        # Reset session state
     st.session_state.login_ok = False
     st.session_state.username = None
     st.session_state.password = None
+    st.session_state.is_guest = False
+    st.session_state.triage_requests = []
     st.rerun()
 
 # Main App
@@ -274,7 +287,9 @@ def main_app():
      # Logout button
     if st.sidebar.button("Logout"):
         logout()
-        
+
+    model_weight = 0
+
     st.title("🏥 TriageAssist")
     st.write("Enter patient details below to determine their triage status.")
 
@@ -332,25 +347,75 @@ def main_app():
         image_file = st.file_uploader("Upload an image", type=["jpg", "jpeg", "png"], label_visibility="collapsed")
         if image_file is not None:
             image = Image.open(image_file)
+            model_weight = model_weight - .3
     else:
         st.write("Take a photo:")
         camera_image = st.camera_input("Take a photo", label_visibility="collapsed")
         if camera_image is not None:
             image = Image.open(camera_image)
+            model_weight = model_weight - .3
 
     if st.button("Submit", use_container_width=True):
         # Handle empty inputs
-        age = 0 if age is None else age
-        pain_level = 0 if pain_level is None else pain_level
-        bp_systolic = 0 if bp_systolic is None else bp_systolic
-        bp_diastolic = 0 if bp_diastolic is None else bp_diastolic
-        heart_rate = 0 if heart_rate is None else heart_rate
-        oxygen_saturation = 0 if oxygen_saturation is None else oxygen_saturation
-        respiratory_rate = 0 if respiratory_rate is None else respiratory_rate
-        body_temperature = 0 if body_temperature is None else body_temperature
-        sex = "No Selection" if sex is None else sex
-        consciousness = "Unknown" if consciousness is None else consciousness
-        transport = "No Selection" if transport is None else transport
+        if age is None:
+            age = 0
+        else:
+            model_weight += 0.05
+
+        if pain_level is None:
+            pain_level = 0
+        else:
+            model_weight += 0.05
+
+        if bp_systolic is None:
+            bp_systolic = 0
+        else:
+            model_weight += 0.05
+
+        if bp_diastolic is None:
+            bp_diastolic = 0
+        else:
+            model_weight += 0.05
+
+        if heart_rate is None:
+            heart_rate = 0
+        else:
+            model_weight += 0.05
+
+        if oxygen_saturation is None:
+            oxygen_saturation = 0
+        else:
+            model_weight += 0.05
+
+        if respiratory_rate is None:
+            respiratory_rate = 0
+        else:
+            model_weight += 0.05
+
+        if body_temperature is None:
+            body_temperature = 0
+        else:
+            model_weight += 0.05
+
+        if sex is None:
+            sex = "No Selection"
+        else:
+            model_weight += 0.05
+
+        if consciousness is None:
+            consciousness = "Unknown"
+        else:
+            model_weight += 0.05
+
+        if transport is None:
+            transport = "No Selection"
+        else:
+            model_weight += 0.05
+
+        if description is None or description == "":
+            description = "No description"
+        else:
+            model_weight -= 0.1
 
         # Convert body temperature to Celsius
         body_temperature_celsius = convert_to_celsius(body_temperature, temp_unit)
@@ -411,13 +476,100 @@ def main_app():
         groq_triage_description = response.split(";")[1]
 
         # Calculate the recommended triage level
-        recommended_triage = calculate_recommended_triage(groq_triage_level, ml_triage_level)
+        recommended_triage = calculate_recommended_triage(groq_triage_level, ml_triage_level, model_weight)
 
-        # Display Predictions
+        # Summary card at the top
         st.subheader("Recommended Triage")
         recommended_triage_color = get_triage_color(str(recommended_triage))
         st.markdown(
             f"""
+                            <div style="
+                                background-color: {recommended_triage_color};
+                                padding: 20px;
+                                border-radius: 10px;
+                                text-align: center;
+                                font-size: 24px;
+                                color: black;
+                                font-weight: bold;
+                                margin-bottom: 20px;
+                            ">
+                                Recommended Triage Level: {recommended_triage}
+                            </div>
+                            """,
+            unsafe_allow_html=True,
+        )
+
+        with st.expander("More Details", expanded=True):
+            # Create columns for the three main components
+            col1, col2, col3 = st.columns(3)
+
+            # Groq Recommendation
+            with col1:
+                st.subheader("LLM Prediction")
+                groq_triage_color = get_triage_color(groq_triage_level)
+                st.markdown(
+                    f"""
+                    <div style="
+                        background-color: {groq_triage_color};
+                        padding: 20px;
+                        border-radius: 10px;
+                        text-align: center;
+                        font-size: 24px;
+                        color: black;
+                        font-weight: bold;
+                        margin-bottom: 10px;
+                    ">
+                        Level: {groq_triage_level}
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
+                st.markdown(f"**Rationale:** {groq_triage_description}")
+                st.markdown("**Inputs Considered:**")
+                st.markdown("- Patient description")
+                st.markdown("- Image analysis")
+                st.markdown("- All clinical vitals")
+                st.markdown("- Consciousness level")
+                st.markdown("- Transport method")
+
+            # Model Recommendation
+            with col2:
+                st.subheader("ML Prediction")
+                ml_triage_color = get_triage_color(str(ml_triage_level))
+                st.markdown(
+                    f"""
+                    <div style="
+                        background-color: {ml_triage_color};
+                        padding: 20px;
+                        border-radius: 10px;
+                        text-align: center;
+                        font-size: 24px;
+                        color: black;
+                        font-weight: bold;
+                        margin-bottom: 10px;
+                    ">
+                        Level: {ml_triage_level}
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
+                st.markdown("**Algorithm:** Voting Classifier (RF + XP + KNN)")
+                st.markdown("**Inputs Considered:**")
+                st.markdown("- Age: " + str(age))
+                st.markdown("- Sex: " + str(sex))
+                st.markdown("- Transport: " + str(transport))
+                st.markdown("- Consciousness: " + str(consciousness))
+                st.markdown("- BP: " + str(bp_systolic) + "/" + str(bp_diastolic))
+                st.markdown("- Heart rate: " + str(heart_rate))
+                st.markdown("- Resp. rate: " + str(respiratory_rate))
+                st.markdown("- Temp: " + f"{body_temperature_celsius:.1f}°C")
+
+            # Model Weight and Final Recommendation
+            with col3:
+                st.subheader("Final Prediction")
+                recommended_triage_color = get_triage_color(str(recommended_triage))
+                st.markdown(
+                    f"""
                     <div style="
                         background-color: {recommended_triage_color};
                         padding: 20px;
@@ -426,64 +578,85 @@ def main_app():
                         font-size: 24px;
                         color: black;
                         font-weight: bold;
+                        margin-bottom: 10px;
                     ">
-                        Recommended Triage Level: {recommended_triage}
+                        Level: {recommended_triage}
                     </div>
                     """,
-            unsafe_allow_html=True,
-        )
+                    unsafe_allow_html=True,
+                )
 
-        
-        st.subheader("Groq Prediction")
-        groq_triage_color = get_triage_color(groq_triage_level)
-        st.markdown(
-            f"""
-            <div style="
-                background-color: {groq_triage_color};
-                padding: 20px;
-                border-radius: 10px;
-                text-align: center;
-                font-size: 24px;
-                color: black;
-                font-weight: bold;
-            ">
-                Triage Level: {groq_triage_level}
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-        st.markdown(
-            f"""
-            <div style="
-                text-align: center;
-                font-size: 16px;
-                color: #666666;
-                margin-top: 10px;
-            ">
-                {groq_triage_description}
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
+                # Display model weight information
+                st.markdown("**Model Weighting:**")
+                st.write(f"Machine learning model contribution: {model_weight * 100:.1f}%")
+                st.write(f"Llama LLM analysis contribution: {(1 - model_weight) * 100:.1f}%")
 
-        st.subheader("Machine Learning Model Prediction")
-        ml_triage_color = get_triage_color(str(ml_triage_level))
-        st.markdown(
-            f"""
-            <div style="
-                background-color: {ml_triage_color};
-                padding: 20px;
-                border-radius: 10px;
-                text-align: center;
-                font-size: 24px;
-                color: black;
-                font-weight: bold;
-            ">
-                Triage Level: {ml_triage_level}
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
+                # Weight adjustment factors
+                st.markdown("**Weight Adjustment Factors:**")
+                if image is not None:
+                    st.write("- Image analysis reduced model weight")
+                if description != "No description":
+                    st.write("- Text description reduced model weight")
+                if age is not None:
+                    st.write("- Age increased model weight")
+                if pain_level is not None:
+                    st.write("- Pain level increased model weight")
+                # Add more factors as needed
+
+                st.progress(model_weight)
+                st.caption("Higher values mean more reliance on the ML model")
+
+
+        # st.subheader("Groq Prediction")
+        # groq_triage_color = get_triage_color(groq_triage_level)
+        # st.markdown(
+        #     f"""
+        #     <div style="
+        #         background-color: {groq_triage_color};
+        #         padding: 20px;
+        #         border-radius: 10px;
+        #         text-align: center;
+        #         font-size: 24px;
+        #         color: black;
+        #         font-weight: bold;
+        #     ">
+        #         Triage Level: {groq_triage_level}
+        #     </div>
+        #     """,
+        #     unsafe_allow_html=True,
+        # )
+        # st.markdown(
+        #     f"""
+        #     <div style="
+        #         text-align: center;
+        #         font-size: 16px;
+        #         color: #666666;
+        #         margin-top: 10px;
+        #     ">
+        #         {groq_triage_description}
+        #     </div>
+        #     """,
+        #     unsafe_allow_html=True,
+        # )
+        #
+        # st.subheader("Machine Learning Model Prediction")
+        # ml_triage_color = get_triage_color(str(ml_triage_level))
+        # st.markdown(
+        #     f"""
+        #     <div style="
+        #         background-color: {ml_triage_color};
+        #         padding: 20px;
+        #         border-radius: 10px;
+        #         text-align: center;
+        #         font-size: 24px;
+        #         color: black;
+        #         font-weight: bold;
+        #     ">
+        #         Triage Level: {ml_triage_level}
+        #     </div>
+        #     """,
+        #     unsafe_allow_html=True,
+        # )
 
         st.session_state.triage_requests.append({
             "triage_level": recommended_triage,
