@@ -252,22 +252,28 @@ def logout():
 
 # Main App
 def main_app():
+    if "triage_requests" not in st.session_state:
+        st.session_state.triage_requests = []
+ 
     # Sidebar for previous triage requests
     st.sidebar.title("📋 Previous Triage Requests")
-    triages = conn.query(f"SELECT * FROM triages WHERE user_id = {st.session_state.user_id}", ttl=0)
-    if not triages.empty:
+    if st.session_state.triage_requests:
         # Sort triage requests by priority (1 at the top)
-        sorted_requests = triages.sort_values(by="triage_level")
-        for i, request in sorted_requests.iterrows():
+        sorted_requests = sorted(st.session_state.triage_requests, key=lambda x: int(x["triage_level"]))
+        for i, request in enumerate(sorted_requests):
             with st.sidebar.expander(f"Triage {i + 1}: Level {request['triage_level']}"):
                 st.write(f"**Description:** {request['description']}")
                 st.write(f"**Triage Level:** {request['triage_level']}")
                 st.write(f"**Reason:** {request['triage_description']}")
                 if st.button(f"Resolve Triage {i + 1}", key=f"resolve_{i}"):
-                    conn.query(f"DELETE FROM triages WHERE id = {request['id']}", ttl=0)
-                    st.rerun()
+                     st.session_state.triage_requests.pop(i)
+                     st.rerun()
     else:
         st.sidebar.write("No triage requests yet.")
+ 
+     # Logout button
+     if st.sidebar.button("Logout"):
+         logout()
 
     # Logout button
     if st.sidebar.button("Logout"):
