@@ -23,7 +23,7 @@ def load_model_and_scaler():
 voting_model, scaler, feature_names = load_model_and_scaler()
 
 def get_groq_client():
-    return Groq(api_key="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")
+    return Groq(api_key=st.secrets["API_KEY"])
 
 # Cache the image encoding function to avoid redundant computations
 @st.cache_data
@@ -231,7 +231,7 @@ def login_page():
         st.session_state.login_ok = True
         st.session_state.username = "guest"
         st.session_state.is_guest = True
-        st.rerun()
+        st.experimental_rerun()
 
 # Authenticate user
 def authenticate():
@@ -244,7 +244,7 @@ def authenticate():
         controller.set(f'{cookie_name}_username', username, max_age=80*60*60)
         controller.set(f'{cookie_name}_password', password, max_age=80*60*60)
         st.session_state.login_ok = True
-        st.rerun()
+        st.experimental_rerun()
     else:
         st.error("Wrong username/password.")
 
@@ -261,7 +261,7 @@ def logout():
     st.session_state.password = None
     st.session_state.is_guest = False
     st.session_state.triage_requests = []
-    st.rerun()
+    st.experimental_rerun()
 
 # Main App
 def main_app():
@@ -280,7 +280,7 @@ def main_app():
                 st.write(f"**Reason:** {request['triage_description']}")
                 if st.button(f"Resolve Triage {i + 1}", key=f"resolve_{i}"):
                      st.session_state.triage_requests.pop(i)
-                     st.rerun()
+                     st.experimental_rerun()
     else:
         st.sidebar.write("No triage requests yet.")
  
